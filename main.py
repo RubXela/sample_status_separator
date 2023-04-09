@@ -154,15 +154,26 @@ class FileEditorApp(tkinter.Tk):
                                     df[i][j] = cell.text
                     dataframe = pd.DataFrame(df[:][1:])
                     list_data = dataframe.to_numpy().tolist()
-                    #print(list_data[-1][0].split('\n'))
                     self.headers = list_data[0]
                     self.table['column'] = self.headers
                     self.table['show'] = 'headings'
-                    for column in self.table['columns']:
-                        self.table.heading(column, text=column)
+                    for index, column in enumerate(self.table['columns']):
+                        width = len(list_data[1][index])
+                        self.table.heading(column, anchor=tkinter.CENTER,
+                                           text=column)
+                        anchor = tkinter.CENTER
+                        if width > 20:
+                            width = 200
+                            anchor = 'w'
+                        self.table.column(index, minwidth=15, anchor=anchor,
+                                          width=width)
+                        print(len(list_data[1][index]))
                     potential_counter = 0
                     lost_counter = 0
                     renew_counter = 0
+                    parent_potential = ''
+                    parent_lost = ''
+                    parent_renew = ''
                     for index, row in enumerate(list_data):
                         status = (
                             str(dataframe[7][index]).strip().lower()
@@ -171,18 +182,28 @@ class FileEditorApp(tkinter.Tk):
                             row[0] = (row[0].split('\n')[0]
                             + row[0].split('\n')[1])
                         if status == 'пчк':
+                            if parent_potential == '':
+                                parent_potential = self.table.insert(
+                                    '', 'end', value='ПЧК')
                             self.potential_member.append(row[:])
-                            self.table.insert('', 'end', value=row)
+                            self.table.insert(
+                                parent_potential, 'end', value=row)
                             potential_counter += 1
                         elif status == 'бчк':
+                            if parent_lost == '':
+                                parent_lost = self.table.insert(
+                                    '', 'end', value='БЧК')
                             self.lost_member.append(row[:])
-                            self.table.insert('', 'end', value=row)
+                            self.table.insert(parent_lost, 'end', value=row)
                             lost_counter += 1
                         elif (status == 'рп, мп, пп' 
                             or status == 'рп,мп,пп'
                             or status in ('рп', 'мп', 'пп')):
+                            if parent_renew == '':
+                                parent_renew = self.table.insert(
+                                    '', 'end', value='РП-МП-ПП')
                             self.renew_member.append(row[:])
-                            self.table.insert('', 'end', value=row)
+                            self.table.insert(parent_renew, 'end', value=row)
                             renew_counter += 1
                     all_count = (potential_counter +
                                  lost_counter + renew_counter)
@@ -219,13 +240,14 @@ class FileEditorApp(tkinter.Tk):
                                     f'Окончание продажи: {date}')                      
             except FileNotFoundError:
                 return
-            except Exception:
+            except Exception as e:
+                print(e)
                 messagebox.showerror('Информация', 'Ошибка при чтении файла')
 
         self.table_workplace = tkinter.LabelFrame(
             self, height=150, text='Таблица служебной записки')
         self.table_workplace.place(x=10, y=160, relwidth=.985, relheight=.85)
-        self.table = ttk.Treeview(self.table_workplace, show='headings')
+        self.table = CustomTreeView(self.table_workplace, show='headings')
         self.table.place(relheight=1, relwidth=1)
         treescrolly = tkinter.Scrollbar(
             self.table, orient='vertical', command=self.table.yview)
@@ -240,8 +262,42 @@ class FileEditorApp(tkinter.Tk):
             self.table.delete(*self.table.get_children())
             self.table['show'] = ''
             return None
+        
+
+class CustomTreeView(ttk.Treeview):
+    def __init__(self, master, **kw):
+        super().__init__(master, **kw)
+        self.bind('<space>', self.on_select)
+
+    def on_select(self, event):
+        selected_reg = self.identify_region(event.x, event.y)
+        if selected_reg != 'cell':
+            return
+        column = self.identify_column(event.x)
+        column_idx = int(column[1:]) - 1
+        selected_row_id = self.focus()
+        selected_values = self.item(selected_row_id)
+        column_box = self.bbox(selected_row_id, column)
+        if (selected_values.get('values')[0] == 'ПЧК'
+            or selected_values.get('values')[0] == 'РП-МП-ПП'
+            or selected_values.get('values')[0] == 'БЧК'):
+            return
+        select_text = selected_values.get('values')[column_idx]
+        entry_edit = ttk.Entry(self, width=len(str(select_text)))
+        entry_edit.editing_column_index = column_idx
+        entry_edit.editing_item_row_id = selected_row_id
+        entry_edit.insert(0, select_text)
+        entry_edit.select_range(0, 'end')
+        entry_edit.focus()
+        entry_edit.bind('<FocusOut>', self.unfocus)
+        entry_edit.place(x=column_box[0], y=column_box[1], w=column_box[2],
+                         h=column_box[3])
+        
+    def unfocus(self, event):
+        event.widget.destroy()
 
 
 if __name__ == "__main__":
     app = FileEditorApp()
+    app = ttk.Entry(app)
     app.mainloop()
