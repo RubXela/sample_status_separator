@@ -75,6 +75,16 @@ class FileEditorApp(tkinter.Tk):
                 filetype=[('Excel', '*.xlsx')])
                 try:
                     if saved_filename != '':
+                        info_data = pd.DataFrame.from_dict({
+                            'Информация о СЗ': [
+                                self.label_all_status['text'],
+                                self.label_potential_status['text'],
+                                self.label_renew_status['text'],
+                                self.label_lost_status['text'],
+                                self.label_start_sell['text'],
+                                self.label_end_sell['text'],
+                            ]
+                        })
                         potential = get_formated_data(
                             self.potential_member, self.headers)
                         renew = get_formated_data(
@@ -99,6 +109,11 @@ class FileEditorApp(tkinter.Tk):
                                     writer,
                                     sheet_name='БЧК',
                                     index=False)
+                            info_data.to_excel(
+                                writer,
+                                sheet_name='Информация о СЗ',
+                                index=False
+                            )
                 except FileNotFoundError:
                     return
                 except Exception:
@@ -139,6 +154,7 @@ class FileEditorApp(tkinter.Tk):
                                     df[i][j] = cell.text
                     dataframe = pd.DataFrame(df[:][1:])
                     list_data = dataframe.to_numpy().tolist()
+                    #print(list_data[-1][0].split('\n'))
                     self.headers = list_data[0]
                     self.table['column'] = self.headers
                     self.table['show'] = 'headings'
@@ -151,6 +167,9 @@ class FileEditorApp(tkinter.Tk):
                         status = (
                             str(dataframe[7][index]).strip().lower()
                             ).strip(',')
+                        if '\n' in row[0]:
+                            row[0] = (row[0].split('\n')[0]
+                            + row[0].split('\n')[1])
                         if status == 'пчк':
                             self.potential_member.append(row[:])
                             self.table.insert('', 'end', value=row)
@@ -159,8 +178,9 @@ class FileEditorApp(tkinter.Tk):
                             self.lost_member.append(row[:])
                             self.table.insert('', 'end', value=row)
                             lost_counter += 1
-                        elif (status == 'рп, мп, пп'
-                              or status in ('рп', 'мп', 'пп')):
+                        elif (status == 'рп, мп, пп' 
+                            or status == 'рп,мп,пп'
+                            or status in ('рп', 'мп', 'пп')):
                             self.renew_member.append(row[:])
                             self.table.insert('', 'end', value=row)
                             renew_counter += 1
@@ -176,6 +196,8 @@ class FileEditorApp(tkinter.Tk):
                     for index, line in enumerate(file.paragraphs):
                         line = str(line.text).strip().lower()
                         if 'дата введения услуги' in line:
+                            if '\n' in line:
+                                line = line.split('\n')[1]
                             if line.split(':')[1] != '':
                                 date = line.split(':')[1]
                                 self.label_start_sell['text'] = (
@@ -185,6 +207,8 @@ class FileEditorApp(tkinter.Tk):
                                 self.label_start_sell['text'] = (
                                     f'Начало продажи: {date}')
                         elif 'дата окончания продажи' in line:
+                            if '\n' in line:
+                                line = line.split('\n')[1]
                             if line.split(':')[1] != '':
                                 date = line.split(':')[1]
                                 self.label_end_sell['text'] = (
