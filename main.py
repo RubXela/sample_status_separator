@@ -240,8 +240,7 @@ class FileEditorApp(tkinter.Tk):
                                     f'Окончание продажи: {date}')                      
             except FileNotFoundError:
                 return
-            except Exception as e:
-                print(e)
+            except Exception:
                 messagebox.showerror('Информация', 'Ошибка при чтении файла')
 
         self.table_workplace = tkinter.LabelFrame(
