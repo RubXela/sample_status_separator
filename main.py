@@ -167,7 +167,6 @@ class FileEditorApp(tkinter.Tk):
                             anchor = 'w'
                         self.table.column(index, minwidth=15, anchor=anchor,
                                           width=width)
-                        print(len(list_data[1][index]))
                     potential_counter = 0
                     lost_counter = 0
                     renew_counter = 0
