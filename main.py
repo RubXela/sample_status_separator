@@ -268,6 +268,7 @@ class CustomTreeView(ttk.Treeview):
         self.bind('<space>', self.on_select)
 
     def on_select(self, event):
+
         selected_reg = self.identify_region(event.x, event.y)
         if selected_reg != 'cell':
             return
@@ -280,12 +281,14 @@ class CustomTreeView(ttk.Treeview):
             or selected_values.get('values')[0] == 'РП-МП-ПП'
             or selected_values.get('values')[0] == 'БЧК'):
             return
+        self.clipboard_clear()
         select_text = selected_values.get('values')[column_idx]
         entry_edit = ttk.Entry(self, width=len(str(select_text)))
         entry_edit.editing_column_index = column_idx
         entry_edit.editing_item_row_id = selected_row_id
         entry_edit.insert(0, select_text)
         entry_edit.select_range(0, 'end')
+        self.clipboard_append(select_text)
         entry_edit.focus()
         entry_edit.bind('<FocusOut>', self.unfocus)
         entry_edit.place(x=column_box[0], y=column_box[1], w=column_box[2],
