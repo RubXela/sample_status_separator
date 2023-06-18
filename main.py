@@ -23,7 +23,7 @@ class FileEditorApp(tkinter.Tk):
         self.title('Распределение шаблонов по статусам')
         img = PhotoImage(file=custom_img)
         self.tk.call('wm', 'iconphoto', self._w, img)
-        self.geometry('1100x1100')
+        self.geometry('1100x650')
         self.configure(highlightbackground='gray', highlightthickness=1)
         self.resizable(True, True)
         self.file_workplace = tkinter.LabelFrame(
@@ -38,7 +38,13 @@ class FileEditorApp(tkinter.Tk):
             self, width=30, height=1, text='Сохранить файл',
             highlightbackground='gray', highlightthickness=2, border=1,
             command=lambda: save_to_file())
-        self.save_button.place(x=20, y=90)
+        self.save_button.place(x=20, y=60)
+        self.label_start_sell = tkinter.Label(
+            self, text='')
+        self.label_start_sell.place(x=20, y=100)
+        self.label_end_sell = tkinter.Label(
+            self, text='')
+        self.label_end_sell.place(x=20, y=125)
 
         self.doc_workplace = tkinter.LabelFrame(
             self, width=300, height=150, text='Информация о СЗ')
@@ -48,24 +54,22 @@ class FileEditorApp(tkinter.Tk):
         self.label_all_status.place(x=280, y=25)
         self.label_potential_status = tkinter.Label(
             self, text='')
-        self.label_potential_status.place(x=280, y=45)
+        self.label_potential_status.place(x=280, y=50)
         self.label_renew_status = tkinter.Label(
             self, text='')
-        self.label_renew_status.place(x=280, y=65)
+        self.label_renew_status.place(x=280, y=75)
         self.label_lost_status = tkinter.Label(
             self, text='')
-        self.label_lost_status.place(x=280, y=85)
-        self.label_start_sell = tkinter.Label(
+        self.label_lost_status.place(x=280, y=100)
+        self.label_undefined_status = tkinter.Label(
             self, text='')
-        self.label_start_sell.place(x=280, y=105)
-        self.label_end_sell = tkinter.Label(
-            self, text='')
-        self.label_end_sell.place(x=280, y=125)
+        self.label_undefined_status.place(x=280, y=125)
 
         self.headers = ''
         self.potential_member = []
         self.lost_member = []
         self.renew_member = []
+        self.undefined_member = []
 
         def save_to_file():
             if self.headers != '':
@@ -170,9 +174,11 @@ class FileEditorApp(tkinter.Tk):
                     potential_counter = 0
                     lost_counter = 0
                     renew_counter = 0
+                    undefined_counter = 0
                     parent_potential = ''
                     parent_lost = ''
                     parent_renew = ''
+                    parent_undefined = ''
                     for index, row in enumerate(list_data):
                         status = (
                             str(dataframe[7][index]).strip().lower()
@@ -180,7 +186,7 @@ class FileEditorApp(tkinter.Tk):
                         if '\n' in row[0]:
                             row[0] = (row[0].split('\n')[0]
                             + row[0].split('\n')[1])
-                        if status == 'пчк':
+                        if 'пчк' in status:
                             if parent_potential == '':
                                 parent_potential = self.table.insert(
                                     '', 'end', value='ПЧК')
@@ -188,24 +194,44 @@ class FileEditorApp(tkinter.Tk):
                             self.table.insert(
                                 parent_potential, 'end', value=row)
                             potential_counter += 1
-                        elif status == 'бчк':
+                        elif 'бчк' in status:
                             if parent_lost == '':
                                 parent_lost = self.table.insert(
                                     '', 'end', value='БЧК')
                             self.lost_member.append(row[:])
                             self.table.insert(parent_lost, 'end', value=row)
                             lost_counter += 1
-                        elif (status == 'рп, мп, пп' 
-                            or status == 'рп,мп,пп'
-                            or status in ('рп', 'мп', 'пп')):
+                        elif (not 'бчк' in status
+                            and not 'пчк' in status
+                            and not 'рп, мп, пп' in status
+                            and not 'рп,мп,пп' in status
+                            and not 'рп' in status
+                            and not 'мп' in status
+                            and not 'пп' in status
+                            and index != 0):
+                            if parent_undefined == '':
+                                parent_undefined = self.table.insert(
+                                    '', 'end', value='БЕЗ-СТАТУСА')
+                            self.undefined_member.append(row[:])
+                            self.table.insert(parent_undefined, 'end', value=row)
+                            undefined_counter += 1
+                        elif ('рп, мп, пп' in status
+                            or 'рп,мп,пп' in status
+                            or 'рп' in status
+                            or 'мп' in status
+                            or 'пп' in status
+                            or status in ('рп', 'мп', 'пп')
+                            ):
                             if parent_renew == '':
                                 parent_renew = self.table.insert(
                                     '', 'end', value='РП-МП-ПП')
                             self.renew_member.append(row[:])
                             self.table.insert(parent_renew, 'end', value=row)
                             renew_counter += 1
-                    all_count = (potential_counter +
+                    all_count = (potential_counter + undefined_counter +
                                  lost_counter + renew_counter)
+                    fname = name.split('/')[-1]
+                    self.title(f'Распределение шаблонов по статусам: {fname}')
                     self.label_all_status['text'] = (
                         f'Общее количество шаблонов: {all_count}')
                     self.label_potential_status['text'] = (
@@ -213,6 +239,8 @@ class FileEditorApp(tkinter.Tk):
                     self.label_renew_status['text'] = (
                         f'РП, МП, ПП: {renew_counter}')
                     self.label_lost_status['text'] = f'БЧК: {lost_counter}'
+                    self.label_undefined_status['text'] = (
+                        f'БЕЗ СТАТУСА: {undefined_counter}')
                     for index, line in enumerate(file.paragraphs):
                         line = str(line.text).strip().lower()
                         if 'дата введения услуги' in line:
@@ -239,21 +267,17 @@ class FileEditorApp(tkinter.Tk):
                                     f'Окончание продажи: {date}')                      
             except FileNotFoundError:
                 return
-            except Exception:
+            except Exception as e:
                 messagebox.showerror('Информация', 'Ошибка при чтении файла')
 
         self.table_workplace = tkinter.LabelFrame(
-            self, height=150, text='Таблица служебной записки')
-        self.table_workplace.place(x=10, y=160, relwidth=.985, relheight=.85)
+            self, text='Таблица служебной записки')
+        self.table_workplace.place(x=10, y=160, relwidth=.985, relheight=.7)
         self.table = CustomTreeView(self.table_workplace, show='headings')
-        self.table.place(relheight=1, relwidth=1)
+        self.table.place(x=10, y=10, relwidth=.985, relheight=.95)
         treescrolly = tkinter.Scrollbar(
             self.table, orient='vertical', command=self.table.yview)
-        treescrollx = tkinter.Scrollbar(
-            self.table, orient='horizontal', command=self.table.xview)
-        self.table.configure(
-            xscrollcommand=treescrollx.set, yscrollcommand=treescrolly.set)
-        treescrollx.pack(side="bottom", fill="x")
+        self.table.configure(yscrollcommand=treescrolly.set)
         treescrolly.pack(side="right", fill="y")
 
         def clear_table():
