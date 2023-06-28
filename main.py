@@ -65,6 +65,9 @@ class FileEditorApp(tkinter.Tk):
             self, text='')
         self.label_undefined_status.place(x=280, y=125)
 
+        self.file_name_entry = tkinter.Entry(self, width=85, bd=0, state='readonly')
+        self.file_name_entry.place(x=575, y=13)
+
         self.headers = ''
         self.potential_member = []
         self.lost_member = []
@@ -156,7 +159,7 @@ class FileEditorApp(tkinter.Tk):
                             for j, cell in enumerate(row.cells):
                                 if cell.text:
                                     df[i][j] = cell.text
-                    dataframe = pd.DataFrame(df[:][1:])
+                    dataframe = pd.DataFrame(df[:][1:], index=None, columns=df[1])
                     list_data = dataframe.to_numpy().tolist()
                     self.headers = list_data[0]
                     self.table['column'] = self.headers
@@ -179,9 +182,14 @@ class FileEditorApp(tkinter.Tk):
                     parent_lost = ''
                     parent_renew = ''
                     parent_undefined = ''
+                    status_col = ''
                     for index, row in enumerate(list_data):
+                        if index == 0:
+                            for desc in row:
+                                if desc.strip().lower() == 'статус':
+                                    status_col = desc
                         status = (
-                            str(dataframe[7][index]).strip().lower()
+                            str(dataframe[status_col][index]).strip().lower()
                             ).strip(',')
                         if '\n' in row[0]:
                             row[0] = (row[0].split('\n')[0]
@@ -230,7 +238,11 @@ class FileEditorApp(tkinter.Tk):
                             renew_counter += 1
                     all_count = (potential_counter + undefined_counter +
                                  lost_counter + renew_counter)
+                    self.file_name_entry.config(state='normal')
+                    self.file_name_entry.delete(1, 999)
                     fname = name.split('/')[-1]
+                    self.file_name_entry.insert(0, fname)
+                    self.file_name_entry.config(state='readonly')
                     self.title(f'Распределение шаблонов по статусам: {fname}')
                     self.label_all_status['text'] = (
                         f'Общее количество шаблонов: {all_count}')
@@ -268,7 +280,7 @@ class FileEditorApp(tkinter.Tk):
             except FileNotFoundError:
                 return
             except Exception as e:
-                messagebox.showerror('Информация', 'Ошибка при чтении файла')
+                messagebox.showerror('Ошибка', f'Описание: {e}')
 
         self.table_workplace = tkinter.LabelFrame(
             self, text='Таблица служебной записки')
