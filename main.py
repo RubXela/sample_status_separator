@@ -65,9 +65,6 @@ class FileEditorApp(tkinter.Tk):
             self, text='')
         self.label_undefined_status.place(x=280, y=125)
 
-        self.file_name_entry = tkinter.Entry(self, width=85, bd=0, state='readonly')
-        self.file_name_entry.place(x=575, y=13)
-
         self.headers = ''
         self.potential_member = []
         self.lost_member = []
@@ -139,7 +136,7 @@ class FileEditorApp(tkinter.Tk):
             filename = filedialog.askopenfilename(
                 initialdir='C:\\Users\\{oper}\\Desktop',
                 title='Выберите файл',
-                filetype=[('Word', '*.docx')])
+                filetypes=[('Word', '*.docx')])
             create_table_data(filename)
 
         def create_table_data(name: str):
@@ -238,11 +235,7 @@ class FileEditorApp(tkinter.Tk):
                             renew_counter += 1
                     all_count = (potential_counter + undefined_counter +
                                  lost_counter + renew_counter)
-                    self.file_name_entry.config(state='normal')
-                    self.file_name_entry.delete(1, 999)
                     fname = name.split('/')[-1]
-                    self.file_name_entry.insert(0, fname)
-                    self.file_name_entry.config(state='readonly')
                     self.title(f'Распределение шаблонов по статусам: {fname}')
                     self.label_all_status['text'] = (
                         f'Общее количество шаблонов: {all_count}')
