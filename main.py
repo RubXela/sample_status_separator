@@ -2,7 +2,7 @@ import os
 import sys
 import tkinter
 from tkinter import PhotoImage, filedialog, messagebox, ttk
-
+#from utils.data_extract import start_date, end_date
 import docx
 import pandas as pd
 
@@ -45,7 +45,7 @@ class FileEditorApp(tkinter.Tk):
         self.label_end_sell = tkinter.Label(
             self, text='')
         self.label_end_sell.place(x=20, y=125)
-
+        
         self.doc_workplace = tkinter.LabelFrame(
             self, width=300, height=150, text='Информация о СЗ')
         self.doc_workplace.place(x=270, y=5)
